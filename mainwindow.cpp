@@ -13,22 +13,22 @@
 #include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), textEdit(new QTextEdit), isUntitled(true)
+    : QMainWindow(parent), isUntitled(true), codeEditor(new CodeEditor(this))
 {
-    setCentralWidget(textEdit);
+    setCentralWidget(codeEditor);
 
     createActions();
     createMenus();
     createToolBars();
     createStatusBar();
 
-    highlighter = new SyntaxHighlighter(textEdit->document()); // Инициализация подсветки синтаксиса
+    highlighter = new SyntaxHighlighter(codeEditor->document()); // Инициализация подсветки синтаксиса
 
-    connect(textEdit->document(), &QTextDocument::contentsChanged,
+    connect(codeEditor->document(), &QTextDocument::contentsChanged,
             this, &MainWindow::is_document_modified);
 
     // Подключение сигнала изменения текста к слоту обновления статус бара
-    connect(textEdit, &QTextEdit::textChanged, this, &MainWindow::updateStatusBar);
+    connect(codeEditor, &QPlainTextEdit::textChanged, this, &MainWindow::updateStatusBar);
 
     // Создание QLabel и добавление в статус бар
     statusInfoLabel = new QLabel(this);
@@ -50,7 +50,7 @@ MainWindow::~MainWindow()
 void MainWindow::newFile()
 {
     if (maybeSave()) {
-        textEdit->clear();
+        codeEditor->clear();
         setCurrentFile(QString());
     }
     updateStatusBar();
@@ -97,12 +97,12 @@ void MainWindow::about()
 
 void MainWindow::is_document_modified()
 {
-    setWindowModified(textEdit->document()->isModified());
+    setWindowModified(codeEditor->document()->isModified());
 }
 
 void MainWindow::updateStatusBar()
 {
-    QString text = textEdit->toPlainText();
+    QString text = codeEditor->toPlainText();
 
     // Удаляем все пробелы для подсчета символов без пробелов
     QString textWithoutSpaces = text;
@@ -148,17 +148,17 @@ void MainWindow::createActions()
     cutAct = new QAction(tr("&Вырезать"), this);
     cutAct->setShortcuts(QKeySequence::Cut);
     cutAct->setStatusTip(tr("Вырезать выделенный текст"));
-    connect(cutAct, &QAction::triggered, textEdit, &QTextEdit::cut);
+    connect(cutAct, &QAction::triggered, codeEditor, &QPlainTextEdit::cut);
 
     copyAct = new QAction(tr("&Копировать"), this);
     copyAct->setShortcuts(QKeySequence::Copy);
     copyAct->setStatusTip(tr("Копировать выделенный текст"));
-    connect(copyAct, &QAction::triggered, textEdit, &QTextEdit::copy);
+    connect(copyAct, &QAction::triggered, codeEditor, &QPlainTextEdit::copy);
 
     pasteAct = new QAction(tr("&Вставить"), this);
     pasteAct->setShortcuts(QKeySequence::Paste);
     pasteAct->setStatusTip(tr("Вставить из буфера обмена"));
-    connect(pasteAct, &QAction::triggered, textEdit, &QTextEdit::paste);
+    connect(pasteAct, &QAction::triggered, codeEditor, &QPlainTextEdit::paste);
 
     aboutAct = new QAction(tr("&О программе"), this);
     aboutAct->setStatusTip(tr("Информация о приложении"));
@@ -166,8 +166,8 @@ void MainWindow::createActions()
 
     cutAct->setEnabled(false);
     copyAct->setEnabled(false);
-    connect(textEdit, &QTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
-    connect(textEdit, &QTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
+    connect(codeEditor, &QPlainTextEdit::copyAvailable, cutAct, &QAction::setEnabled);
+    connect(codeEditor, &QPlainTextEdit::copyAvailable, copyAct, &QAction::setEnabled);
 }
 
 void MainWindow::createMenus()
@@ -205,7 +205,7 @@ void MainWindow::createStatusBar()
 
 bool MainWindow::maybeSave()
 {
-    if (textEdit->document()->isModified()) {
+    if (codeEditor->document()->isModified()) {
         QMessageBox::StandardButton ret;
         ret = QMessageBox::warning(this, tr("Текстовый редактор"),
                                    tr("Документ был изменен.\n"
@@ -231,7 +231,7 @@ void MainWindow::loadFile(const QString &fileName)
 
     QTextStream in(&file);
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    textEdit->setPlainText(in.readAll());
+    codeEditor->setPlainText(in.readAll());
     QApplication::restoreOverrideCursor();
 
     setCurrentFile(fileName);
@@ -251,7 +251,7 @@ bool MainWindow::saveFileToDisk(const QString &fileName)
 
     QTextStream out(&file);
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    out << textEdit->toPlainText();
+    out << codeEditor->toPlainText();
     QApplication::restoreOverrideCursor();
 
     setCurrentFile(fileName);
@@ -264,7 +264,7 @@ void MainWindow::setCurrentFile(const QString &fileName)
     currentFile = fileName;
     isUntitled = currentFile.isEmpty();
 
-    textEdit->document()->setModified(false);
+    codeEditor->document()->setModified(false);
     setWindowModified(false);
 
     QString shownName = isUntitled ? tr("Безымянный.txt") : QFileInfo(currentFile).fileName();

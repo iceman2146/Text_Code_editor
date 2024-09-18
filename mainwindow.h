@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QTextEdit>
 #include <QLabel>
+#include "codeeditor.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -54,7 +55,7 @@ private:
     bool saveFileToDisk(const QString &fileName); // Сохранение файла на диск
     void setCurrentFile(const QString &fileName); // Установка текущего файла
 
-    QTextEdit *textEdit;
+    //QTextEdit *textEdit;
     QString currentFile;
     bool isUntitled;
 
@@ -78,5 +79,7 @@ private:
     QAction *aboutAct;
 
     QLabel *statusInfoLabel;
+
+    CodeEditor *codeEditor;
 };
 #endif // MAINWINDOW_H
